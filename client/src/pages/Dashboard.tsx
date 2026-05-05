@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Plus, TrendingUp, Wallet, PieChart } from "lucide-react";
+import { LogOut, Plus, TrendingUp, Wallet, PieChart, X } from "lucide-react";
 
 interface FinancialInfo {
   balance: number;
@@ -39,6 +39,7 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState("");
   const [investmentData, setInvestmentData] = useState({ name: "", type: "", amount: "" });
+  const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -51,8 +52,9 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
         headers: { Authorization: `Bearer ${token}` },
       });
       const finData = await finResponse.json();
-      if (finData.result?.data) {
-        setFinancialInfo(finData.result.data);
+      const finResult = finData.result?.data?.json || finData.result?.data;
+      if (finResult) {
+        setFinancialInfo(finResult);
       }
 
       // Load investments
@@ -60,8 +62,9 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
         headers: { Authorization: `Bearer ${token}` },
       });
       const invData = await invResponse.json();
-      if (invData.result?.data) {
-        setInvestments(invData.result.data);
+      const invResult = invData.result?.data?.json || invData.result?.data;
+      if (invResult) {
+        setInvestments(invResult);
       }
 
       // Load transactions
@@ -74,10 +77,12 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
         body: JSON.stringify({ json: { limit: 10 } }),
       });
       const txData = await txResponse.json();
-      if (txData.result?.data) {
-        setTransactions(txData.result.data);
+      const txResult = txData.result?.data?.json || txData.result?.data;
+      if (txResult) {
+        setTransactions(txResult);
       }
     } catch (error) {
+      console.error("Error loading data:", error);
       toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
@@ -101,14 +106,16 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
       });
 
       const data = await response.json();
-      if (data.result?.data?.success) {
+      const result = data.result?.data?.json || data.result?.data;
+      if (result?.success) {
         toast.success("Depósito realizado!");
         setDepositAmount("");
         loadData();
       } else {
-        toast.error(data.result?.error?.message || "Erro ao depositar");
+        toast.error(data.error?.json?.message || "Erro ao depositar");
       }
     } catch (error) {
+      console.error("Deposit error:", error);
       toast.error("Erro na conexão");
     }
   };
@@ -136,30 +143,40 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
       });
 
       const data = await response.json();
-      if (data.result?.data?.success) {
+      const result = data.result?.data?.json || data.result?.data;
+      if (result?.success) {
         toast.success("Investimento realizado!");
         setInvestmentData({ name: "", type: "", amount: "" });
+        setOpenDialog(false);
         loadData();
       } else {
-        toast.error(data.result?.error?.message || "Erro ao investir");
+        toast.error(data.error?.json?.message || "Erro ao investir");
       }
     } catch (error) {
+      console.error("Investment error:", error);
       toast.error("Erro na conexão");
     }
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Carregando...</div>;
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+          <p>Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pb-20">
       {/* Header */}
-      <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div className="border-b border-slate-700 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="w-8 h-8 text-emerald-500" />
-            <span className="text-2xl font-bold text-white">WealthChain</span>
+            <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500" />
+            <span className="text-lg sm:text-2xl font-bold text-white">WealthChain</span>
           </div>
           <Button
             onClick={() => {
@@ -167,26 +184,27 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
               onLogout();
             }}
             variant="outline"
-            className="border-slate-600 text-slate-300 hover:text-white"
+            size="sm"
+            className="border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
+            <LogOut className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Sair</span>
           </Button>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Financial Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Financial Summary - Mobile Optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader className="pb-2">
-              <CardTitle className="text-slate-300 text-sm font-medium flex items-center gap-2">
-                <Wallet className="w-4 h-4" />
-                Saldo Disponível
+              <CardTitle className="text-slate-300 text-xs sm:text-sm font-medium flex items-center gap-2">
+                <Wallet className="w-3 h-3 sm:w-4 sm:h-4" />
+                Saldo
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">
+              <div className="text-xl sm:text-3xl font-bold text-white">
                 R$ {financialInfo?.balance.toFixed(2)}
               </div>
             </CardContent>
@@ -194,13 +212,13 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
 
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader className="pb-2">
-              <CardTitle className="text-slate-300 text-sm font-medium flex items-center gap-2">
-                <PieChart className="w-4 h-4" />
-                Total Investido
+              <CardTitle className="text-slate-300 text-xs sm:text-sm font-medium flex items-center gap-2">
+                <PieChart className="w-3 h-3 sm:w-4 sm:h-4" />
+                Investido
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-white">
+              <div className="text-xl sm:text-3xl font-bold text-white">
                 R$ {financialInfo?.totalInvested.toFixed(2)}
               </div>
             </CardContent>
@@ -208,99 +226,99 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
 
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader className="pb-2">
-              <CardTitle className="text-slate-300 text-sm font-medium flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Ganho Acumulado
+              <CardTitle className="text-slate-300 text-xs sm:text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+                Ganho
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-3xl font-bold ${financialInfo?.totalGain! >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+              <div className={`text-xl sm:text-3xl font-bold ${financialInfo?.totalGain! >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                 R$ {financialInfo?.totalGain.toFixed(2)}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Actions - Mobile Optimized */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-slate-800 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">Fazer Depósito</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm sm:text-base text-white">Fazer Depósito</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="deposit-amount" className="text-slate-300">Valor (R$)</Label>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="deposit-amount" className="text-xs sm:text-sm text-slate-300">Valor (R$)</Label>
                 <Input
                   id="deposit-amount"
                   type="number"
                   placeholder="0.00"
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-slate-700 border-slate-600 text-white text-sm"
                 />
               </div>
               <Button
                 onClick={handleDeposit}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2"
               >
                 Depositar
               </Button>
             </CardContent>
           </Card>
 
-          <Dialog>
+          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
             <DialogTrigger asChild>
               <Card className="bg-slate-800 border-slate-700 cursor-pointer hover:border-slate-600 transition">
-                <CardHeader>
-                  <CardTitle className="text-white">Novo Investimento</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm sm:text-base text-white">Novo Investimento</CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center h-24">
-                  <Plus className="w-8 h-8 text-emerald-500" />
+                <CardContent className="flex items-center justify-center h-16 sm:h-24">
+                  <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500" />
                 </CardContent>
               </Card>
             </DialogTrigger>
-            <DialogContent className="bg-slate-800 border-slate-700">
+            <DialogContent className="bg-slate-800 border-slate-700 max-w-sm">
               <DialogHeader>
                 <DialogTitle className="text-white">Novo Investimento</DialogTitle>
                 <DialogDescription className="text-slate-400">
                   Escolha um ativo e o valor que deseja investir
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="inv-name" className="text-slate-300">Nome do Ativo</Label>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="inv-name" className="text-xs sm:text-sm text-slate-300">Nome do Ativo</Label>
                   <Input
                     id="inv-name"
                     placeholder="Ex: PETR4"
                     value={investmentData.name}
                     onChange={(e) => setInvestmentData({ ...investmentData, name: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-700 border-slate-600 text-white text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="inv-type" className="text-slate-300">Tipo</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="inv-type" className="text-xs sm:text-sm text-slate-300">Tipo</Label>
                   <Input
                     id="inv-type"
                     placeholder="Ex: Ações"
                     value={investmentData.type}
                     onChange={(e) => setInvestmentData({ ...investmentData, type: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-700 border-slate-600 text-white text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="inv-amount" className="text-slate-300">Valor (R$)</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="inv-amount" className="text-xs sm:text-sm text-slate-300">Valor (R$)</Label>
                   <Input
                     id="inv-amount"
                     type="number"
                     placeholder="0.00"
                     value={investmentData.amount}
                     onChange={(e) => setInvestmentData({ ...investmentData, amount: e.target.value })}
-                    className="bg-slate-700 border-slate-600 text-white"
+                    className="bg-slate-700 border-slate-600 text-white text-sm"
                   />
                 </div>
                 <Button
                   onClick={handleBuyInvestment}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2"
                 >
                   Investir
                 </Button>
@@ -309,29 +327,29 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
           </Dialog>
         </div>
 
-        {/* Investments List */}
-        <Card className="bg-slate-800 border-slate-700 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white">Meus Investimentos</CardTitle>
-            <CardDescription className="text-slate-400">
+        {/* Investments List - Mobile Optimized */}
+        <Card className="bg-slate-800 border-slate-700 mb-6 sm:mb-8">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm sm:text-base text-white">Meus Investimentos</CardTitle>
+            <CardDescription className="text-xs sm:text-sm text-slate-400">
               {investments.length} ativo(s) no portfólio
             </CardDescription>
           </CardHeader>
           <CardContent>
             {investments.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">Nenhum investimento ainda</p>
+              <p className="text-slate-400 text-center py-6 sm:py-8 text-sm">Nenhum investimento ainda</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2 sm:space-y-4">
                 {investments.map((inv) => (
-                  <div key={inv.id} className="flex items-center justify-between p-4 bg-slate-700 rounded-lg">
-                    <div>
-                      <h4 className="font-semibold text-white">{inv.name}</h4>
-                      <p className="text-sm text-slate-400">{inv.type}</p>
+                  <div key={inv.id} className="flex items-center justify-between p-3 sm:p-4 bg-slate-700 rounded-lg">
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-semibold text-white text-sm sm:text-base truncate">{inv.name}</h4>
+                      <p className="text-xs sm:text-sm text-slate-400">{inv.type}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-white font-semibold">R$ {inv.currentValue.toFixed(2)}</p>
-                      <p className={`text-sm ${inv.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                        {inv.profit >= 0 ? "+" : ""}{inv.profit.toFixed(2)} ({inv.profitPercentage}%)
+                    <div className="text-right ml-2">
+                      <p className="text-white font-semibold text-sm sm:text-base">R$ {inv.currentValue.toFixed(2)}</p>
+                      <p className={`text-xs sm:text-sm ${inv.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                        {inv.profit >= 0 ? "+" : ""}{inv.profit.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -341,25 +359,25 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
           </CardContent>
         </Card>
 
-        {/* Transactions */}
+        {/* Transactions - Mobile Optimized */}
         <Card className="bg-slate-800 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white">Histórico de Transações</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm sm:text-base text-white">Histórico</CardTitle>
           </CardHeader>
           <CardContent>
             {transactions.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">Nenhuma transação</p>
+              <p className="text-slate-400 text-center py-6 sm:py-8 text-sm">Nenhuma transação</p>
             ) : (
               <div className="space-y-2">
                 {transactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 bg-slate-700 rounded">
-                    <div>
-                      <p className="text-white font-medium">{tx.description}</p>
+                  <div key={tx.id} className="flex items-center justify-between p-2 sm:p-3 bg-slate-700 rounded text-sm">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-white font-medium truncate text-xs sm:text-sm">{tx.description}</p>
                       <p className="text-xs text-slate-400">
                         {new Date(tx.createdAt).toLocaleDateString("pt-BR")}
                       </p>
                     </div>
-                    <p className={`font-semibold ${tx.type.includes("deposit") || tx.type.includes("sell") ? "text-emerald-400" : "text-red-400"}`}>
+                    <p className={`font-semibold ml-2 text-xs sm:text-sm whitespace-nowrap ${tx.type.includes("deposit") || tx.type.includes("sell") ? "text-emerald-400" : "text-red-400"}`}>
                       {tx.type.includes("deposit") || tx.type.includes("sell") ? "+" : "-"}R$ {tx.amount.toFixed(2)}
                     </p>
                   </div>

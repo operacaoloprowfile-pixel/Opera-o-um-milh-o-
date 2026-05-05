@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Plus, TrendingUp, Wallet, PieChart, X } from "lucide-react";
+import { LogOut, Plus, TrendingUp, Wallet, PieChart, X, User } from "lucide-react";
 
 interface FinancialInfo {
   balance: number;
@@ -32,7 +32,7 @@ interface Transaction {
   createdAt: string;
 }
 
-export default function Dashboard({ token, onLogout }: { token: string; onLogout: () => void }) {
+export default function Dashboard({ token, onLogout, onViewProfile }: { token: string; onLogout: () => void; onViewProfile: () => void }) {
   const [financialInfo, setFinancialInfo] = useState<FinancialInfo | null>(null);
   const [investments, setInvestments] = useState<Investment[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -178,18 +178,30 @@ export default function Dashboard({ token, onLogout }: { token: string; onLogout
             <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500" />
             <span className="text-lg sm:text-2xl font-bold text-white">WealthChain</span>
           </div>
-          <Button
-            onClick={() => {
-              localStorage.removeItem("authToken");
-              onLogout();
-            }}
-            variant="outline"
-            size="sm"
-            className="border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm"
-          >
-            <LogOut className="w-4 h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Sair</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={onViewProfile}
+              variant="outline"
+              size="sm"
+              className="border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm"
+            >
+              <User className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Perfil</span>
+            </Button>
+            <Button
+              onClick={() => {
+                localStorage.removeItem("authToken");
+                localStorage.removeItem("userData");
+                onLogout();
+              }}
+              variant="outline"
+              size="sm"
+              className="border-slate-600 text-slate-300 hover:text-white text-xs sm:text-sm"
+            >
+              <LogOut className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Sair</span>
+            </Button>
+          </div>
         </div>
       </div>
 

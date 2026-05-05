@@ -7,12 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { TrendingUp, Lock, Zap, BarChart3 } from "lucide-react";
 import Dashboard from "./Dashboard";
+import Profile from "./Profile";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("login");
   const [loading, setLoading] = useState(false);
+  const [viewProfile, setViewProfile] = useState(false);
 
   // Login form
   const [loginData, setLoginData] = useState({ cpf: "", password: "" });
@@ -25,16 +27,24 @@ export default function Home() {
     password: "",
   });
 
+  // Função para formatar CPF (11 dígitos -> 000.000.000-00)
+  const formatCPF = (cpf: string): string => {
+    const cleaned = cpf.replace(/\D/g, "");
+    if (cleaned.length !== 11) return cpf;
+    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      const formattedCPF = formatCPF(loginData.cpf);
       const response = await fetch("/api/trpc/auth.login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          json: { cpf: loginData.cpf, password: loginData.password },
+          json: { cpf: formattedCPF, password: loginData.password },
         }),
       });
 
@@ -48,6 +58,10 @@ export default function Home() {
         setToken(resultData.token);
         setIsLoggedIn(true);
         localStorage.setItem("authToken", resultData.token);
+        // Salvar dados do usuário
+        if (resultData.user) {
+          localStorage.setItem("userData", JSON.stringify(resultData.user));
+        }
         toast.success("Login realizado com sucesso!");
         setLoginData({ cpf: "", password: "" });
       } else if (errorData?.message) {
@@ -68,11 +82,12 @@ export default function Home() {
     setLoading(true);
 
     try {
+      const formattedCPF = formatCPF(registerData.cpf);
       const response = await fetch("/api/trpc/auth.register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          json: registerData,
+          json: { ...registerData, cpf: formattedCPF },
         }),
       });
 
@@ -86,6 +101,10 @@ export default function Home() {
         setToken(resultData.token);
         setIsLoggedIn(true);
         localStorage.setItem("authToken", resultData.token);
+        // Salvar dados do usuário
+        if (resultData.user) {
+          localStorage.setItem("userData", JSON.stringify(resultData.user));
+        }
         toast.success("Cadastro realizado com sucesso!");
         setRegisterData({ name: "", email: "", cpf: "", password: "" });
       } else if (errorData?.message) {
@@ -102,7 +121,22 @@ export default function Home() {
   };
 
   if (isLoggedIn && token) {
-    return <Dashboard token={token} onLogout={() => setIsLoggedIn(false)} />;
+    if (viewProfile) {
+      return (
+        <Profile
+          token={token}
+          onBack={() => setViewProfile(false)}
+          onLogout={() => setIsLoggedIn(false)}
+        />
+      );
+    }
+    return (
+      <Dashboard
+        token={token}
+        onLogout={() => setIsLoggedIn(false)}
+        onViewProfile={() => setViewProfile(true)}
+      />
+    );
   }
 
   return (
@@ -187,14 +221,15 @@ export default function Home() {
                 <TabsContent value="login" className="space-y-3 sm:space-y-4 mt-4">
                   <form onSubmit={handleLogin} className="space-y-3 sm:space-y-4">
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="login-cpf" className="text-xs sm:text-sm text-slate-300">CPF</Label>
+                      <Label htmlFor="login-cpf" className="text-xs sm:text-sm text-slate-300">CPF (apenas números)</Label>
                       <Input
                         id="login-cpf"
-                        placeholder="000.000.000-00"
+                        placeholder="12345678900"
                         value={loginData.cpf}
-                        onChange={(e) => setLoginData({ ...loginData, cpf: e.target.value })}
+                        onChange={(e) => setLoginData({ ...loginData, cpf: e.target.value.replace(/\D/g, "").slice(0, 11) })}
                         className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm"
                         required
+                        maxLength={11}
                       />
                     </div>
                     <div className="space-y-1 sm:space-y-2">
@@ -246,14 +281,15 @@ export default function Home() {
                       />
                     </div>
                     <div className="space-y-1 sm:space-y-2">
-                      <Label htmlFor="register-cpf" className="text-xs sm:text-sm text-slate-300">CPF</Label>
+                      <Label htmlFor="register-cpf" className="text-xs sm:text-sm text-slate-300">CPF (apenas números)</Label>
                       <Input
                         id="register-cpf"
-                        placeholder="000.000.000-00"
+                        placeholder="12345678900"
                         value={registerData.cpf}
-                        onChange={(e) => setRegisterData({ ...registerData, cpf: e.target.value })}
+                        onChange={(e) => setRegisterData({ ...registerData, cpf: e.target.value.replace(/\D/g, "").slice(0, 11) })}
                         className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-500 text-sm"
                         required
+                        maxLength={11}
                       />
                     </div>
                     <div className="space-y-1 sm:space-y-2">

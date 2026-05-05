@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { TrendingUp, Lock, Zap, BarChart3 } from "lucide-react";
+import { TrendingUp, Lock, Zap, BarChart3, Info } from "lucide-react";
 import Dashboard from "./Dashboard";
 import Profile from "./Profile";
+import About from "./About";
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -15,6 +16,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("login");
   const [loading, setLoading] = useState(false);
   const [viewProfile, setViewProfile] = useState(false);
+  const [viewAbout, setViewAbout] = useState(false);
 
   // Login form
   const [loginData, setLoginData] = useState({ cpf: "", password: "" });
@@ -120,6 +122,10 @@ export default function Home() {
     }
   };
 
+  if (viewAbout) {
+    return <About onBack={() => setViewAbout(false)} />;
+  }
+
   if (isLoggedIn && token) {
     if (viewProfile) {
       return (
@@ -148,7 +154,15 @@ export default function Home() {
             <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500" />
             <span className="text-lg sm:text-2xl font-bold text-white">WealthChain</span>
           </div>
-          <span className="text-slate-400 text-xs sm:text-sm">Investimentos</span>
+          <Button
+            onClick={() => setViewAbout(true)}
+            variant="ghost"
+            size="sm"
+            className="text-slate-300 hover:text-white text-xs sm:text-sm"
+          >
+            <Info className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Sobre</span>
+          </Button>
         </div>
       </nav>
 

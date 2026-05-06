@@ -17,6 +17,16 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [viewProfile, setViewProfile] = useState(false);
   const [viewAbout, setViewAbout] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+
+  useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      setReferralCode(ref);
+      setActiveTab("register");
+    }
+  });
 
   // Login form
   const [loginData, setLoginData] = useState({ cpf: "", password: "" });
@@ -89,7 +99,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          json: { ...registerData, cpf: formattedCPF },
+          json: { ...registerData, cpf: formattedCPF, referralCode: referralCode || undefined },
         }),
       });
 
@@ -217,7 +227,11 @@ export default function Home() {
             <CardHeader className="pb-3 sm:pb-6">
               <CardTitle className="text-lg sm:text-xl text-white">Bem-vindo ao WealthChain</CardTitle>
               <CardDescription className="text-xs sm:text-sm text-slate-400">
-                Faça login ou crie sua conta para começar
+                {referralCode ? (
+                  <span className="text-emerald-400 font-semibold">Você foi indicado por um parceiro!</span>
+                ) : (
+                  "Faça login ou crie sua conta para começar"
+                )}
               </CardDescription>
             </CardHeader>
             <CardContent>

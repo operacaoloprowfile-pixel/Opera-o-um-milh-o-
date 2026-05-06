@@ -32,6 +32,9 @@
 - [x] Estruturar integração com API de mercado financeiro (atualização de preços)
 - [x] Criar endpoints para sincronização de dados financeiros
 - [x] Documentar como adicionar chaves de API
+- [x] Implementar Lógica de Pirâmide (Rendimento por depósito e indicações)
+- [x] Criar sistema de bônus de rede (10% sobre depósito de indicados)
+- [x] Criar simulador de rendimento diário variável
 
 ## Front-end - Landing Page
 - [x] Replicar hero section do design original

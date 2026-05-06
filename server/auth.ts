@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
-import { getUserByEmail, getUserByCPF, createUserWithAuth, getUserById } from "./db";
+import { getUserByEmail, getUserByCPF, createUserWithAuth, getUserById, getUserByReferralCode } from "./db";
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET_KEY || "wealthchain-secret-key-2024");
 
@@ -36,7 +36,8 @@ export async function registerUser(
   name: string,
   email: string,
   cpf: string,
-  password: string
+  password: string,
+  referralCode?: string
 ): Promise<{ userId: number; token: string }> {
   // Check if user already exists
   const existingEmail = await getUserByEmail(email);
@@ -49,11 +50,24 @@ export async function registerUser(
     throw new Error("CPF already registered");
   }
 
+  let referredById: number | null = null;
+  if (referralCode) {
+    const referrer = await getUserByReferralCode(referralCode);
+    if (referrer) {
+      referredById = referrer.id;
+    }
+  }
+
   // Hash password
   const passwordHash = await hashPassword(password);
 
   // Create user
   const user = await createUserWithAuth(name, email, cpf, passwordHash);
+
+  if (referredById) {
+    const { updateUser } = await import("./db");
+    await updateUser(user.id, { referredById });
+  }
 
   // Generate JWT
   const token = await generateJWT(user.id);

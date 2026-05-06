@@ -41,8 +41,13 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [investmentData, setInvestmentData] = useState({ name: "", type: "", amount: "" });
   const [openDialog, setOpenDialog] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
+    const savedUser = localStorage.getItem("userData");
+    if (savedUser) setUserData(JSON.parse(savedUser));
+    loadData();
+  }, []);
     loadData();
   }, []);
 
@@ -220,6 +225,26 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
     }
   };
 
+  const handleSimulateYield = async () => {
+    try {
+      const response = await fetch("/api/trpc/financial.simulateYield", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ json: {} }),
+      });
+      const data = await response.json();
+      if (data.result?.data?.json?.success) {
+        toast.success("Rendimentos processados!");
+        loadData();
+      }
+    } catch (error) {
+      toast.error("Erro ao simular rendimentos");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
@@ -313,6 +338,34 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
           </Card>
         </div>
 
+        {/* Referral Section */}
+        <Card className="bg-slate-800 border-emerald-500/30 border mb-6 sm:mb-8">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base text-white flex items-center gap-2">
+              <Plus className="w-4 h-4 text-emerald-500" />
+              Programa de Afiliados (10% de Bônus)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3 items-center">
+              <div className="flex-1 w-full p-2 bg-slate-900 rounded border border-slate-700 text-emerald-400 font-mono text-sm break-all">
+                {window.location.origin}/?ref={userData?.referralCode || "..."}
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="w-full sm:w-auto border-emerald-500 text-emerald-500 hover:bg-emerald-500 hover:text-white"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/?ref=${userData?.referralCode}`);
+                  toast.success("Link copiado!");
+                }}
+              >
+                Copiar Link
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Actions - Mobile Optimized */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-slate-800 border-slate-700">
@@ -366,17 +419,28 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
             </CardContent>
           </Card>
 
-          <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-            <DialogTrigger asChild>
-              <Card className="bg-slate-800 border-slate-700 cursor-pointer hover:border-slate-600 transition">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm sm:text-base text-white">Novo Investimento</CardTitle>
-                </CardHeader>
-                <CardContent className="flex items-center justify-center h-16 sm:h-24">
-                  <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500" />
-                </CardContent>
-              </Card>
-            </DialogTrigger>
+          <div className="flex flex-col gap-3">
+            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+              <DialogTrigger asChild>
+                <Card className="bg-slate-800 border-slate-700 cursor-pointer hover:border-slate-600 transition">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm sm:text-base text-white">Novo Investimento</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-center h-16">
+                    <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500" />
+                  </CardContent>
+                </Card>
+              </DialogTrigger>
+              {/* ... dialog content ... */}
+            </Dialog>
+            <Button 
+              variant="ghost" 
+              className="text-slate-500 text-xs hover:text-emerald-500"
+              onClick={handleSimulateYield}
+            >
+              Simular Rendimento Diário (Demo)
+            </Button>
+          </div>
             <DialogContent className="bg-slate-800 border-slate-700 max-w-sm">
               <DialogHeader>
                 <DialogTitle className="text-white">Novo Investimento</DialogTitle>

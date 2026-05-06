@@ -22,6 +22,8 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  referredById: int("referredById"),
+  referralCode: varchar("referralCode", { length: 20 }).unique(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -38,6 +40,8 @@ export const userFinancialInfo = mysqlTable("userFinancialInfo", {
   balance: int("balance").default(0).notNull(),
   totalInvested: int("totalInvested").default(0).notNull(),
   totalGain: int("totalGain").default(0).notNull(),
+  dailyYieldRate: int("dailyYieldRate").default(100).notNull(), // Em base 100 (ex: 100 = 1% ao dia)
+  totalDeposited: int("totalDeposited").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -51,7 +55,7 @@ export type InsertUserFinancialInfo = typeof userFinancialInfo.$inferInsert;
 export const transactions = mysqlTable("transactions", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().references(() => users.id),
-  type: mysqlEnum("type", ["deposit", "withdraw", "investment_buy", "investment_sell"]).notNull(),
+  type: mysqlEnum("type", ["deposit", "withdraw", "investment_buy", "investment_sell", "referral_bonus", "yield"]).notNull(),
   amount: int("amount").notNull(),
   description: text("description"),
   status: mysqlEnum("status", ["pending", "completed", "failed"]).default("pending").notNull(),

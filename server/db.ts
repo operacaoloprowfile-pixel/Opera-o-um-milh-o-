@@ -108,6 +108,8 @@ export async function createUserFinancialInfo(userId: number, cpf: string): Prom
     balance: 0,
     totalInvested: 0,
     totalGain: 0,
+    totalDeposited: 0,
+    dailyYieldRate: 100, // 1% padrão
   });
 
   const result = await db.select().from(userFinancialInfo).where(eq(userFinancialInfo.userId, userId)).limit(1);
@@ -120,6 +122,21 @@ export async function updateBalance(userId: number, newBalance: number): Promise
   if (!db) throw new Error("Database not available");
 
   await db.update(userFinancialInfo).set({ balance: newBalance }).where(eq(userFinancialInfo.userId, userId));
+}
+
+export async function updateFinancialInfo(userId: number, updates: Partial<UserFinancialInfo>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(userFinancialInfo).set(updates).where(eq(userFinancialInfo.userId, userId));
+}
+
+export async function getUserByReferralCode(code: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(users).where(eq(users.referralCode, code)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }
 
 // Transaction queries
@@ -207,6 +224,13 @@ export async function deleteInvestment(investmentId: number): Promise<void> {
   await db.delete(investments).where(eq(investments.id, investmentId));
 }
 
+export async function updateUser(userId: number, updates: Partial<User>): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(users).set(updates).where(eq(users.id, userId));
+}
+
 export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
@@ -240,6 +264,7 @@ export async function createUserWithAuth(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
+  const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
   await db.insert(users).values({
     name,
     email,
@@ -247,6 +272,7 @@ export async function createUserWithAuth(
     passwordHash,
     loginMethod: "email",
     role: "user",
+    referralCode,
   });
 
   const result = await db.select().from(users).where(eq(users.email, email)).limit(1);

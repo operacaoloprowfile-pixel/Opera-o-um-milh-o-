@@ -7,6 +7,7 @@ import {
   getUserFinancialInfo,
   createUserFinancialInfo,
   updateBalance,
+  updateFinancialInfo,
   getUserTransactions,
   createTransaction,
   getUserInvestments,
@@ -38,6 +39,7 @@ export const appRouter = router({
         email: z.string().email(),
         cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/),
         password: z.string().min(6),
+        referralCode: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         try {
@@ -45,7 +47,8 @@ export const appRouter = router({
             input.name,
             input.email,
             input.cpf,
-            input.password
+            input.password,
+            input.referralCode
           );
 
           const user = await getUserById(userId);
@@ -144,8 +147,19 @@ export const appRouter = router({
 
         const amountInCents = Math.round(input.amount * 100);
         const newBalance = info.balance + amountInCents;
+        const newTotalDeposited = info.totalDeposited + amountInCents;
 
-        await updateBalance(ctx.user.id, newBalance);
+        // Lógica de Pirâmide: Aumentar taxa de rendimento baseada no depósito total
+        // Cada R$ 1000 depositados aumentam a taxa em 0.5% (50 base points)
+        const bonusRate = Math.floor(newTotalDeposited / 100000) * 50;
+        const newYieldRate = 100 + bonusRate; // 100 = 1% base
+
+        await updateFinancialInfo(ctx.user.id, { 
+          balance: newBalance,
+          totalDeposited: newTotalDeposited,
+          dailyYieldRate: newYieldRate
+        });
+
         await createTransaction(
           ctx.user.id,
           "deposit",
@@ -153,11 +167,34 @@ export const appRouter = router({
           `Depósito de R$ ${input.amount.toFixed(2)}`
         );
 
+        // Lógica de Pirâmide: Pagar bônus ao padrinho (10% do depósito)
+        if (ctx.user.referredById) {
+          const referrerInfo = await getUserFinancialInfo(ctx.user.referredById);
+          if (referrerInfo) {
+            const bonusAmount = Math.round(amountInCents * 0.1);
+            await updateBalance(ctx.user.referredById, referrerInfo.balance + bonusAmount);
+            await createTransaction(
+              ctx.user.referredById,
+              "referral_bonus",
+              bonusAmount,
+              `Bônus de indicação: Depósito de ${ctx.user.name}`
+            );
+          }
+        }
+
         return {
           success: true,
           newBalance: newBalance / 100,
+          newYieldRate: newYieldRate / 100,
         };
       }),
+
+    // Simulate daily yield (Admin or Manual trigger for demo)
+    simulateYield: protectedProcedure.mutation(async ({ ctx }) => {
+      const { processDailyYield } = await import("./yield-cron");
+      await processDailyYield();
+      return { success: true };
+    }),
 
     // Withdraw
     withdraw: protectedProcedure

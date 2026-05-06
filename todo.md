@@ -15,6 +15,8 @@
 - [x] Implementar endpoint de histórico de transações
 - [x] Validar saldo antes de operações
 - [x] Atualizar saldo em tempo real após operações
+- [x] Implementar endpoint de saque (withdraw)
+- [x] Integrar interface de saque no Dashboard
 
 ## Gestão de Investimentos
 - [x] Criar schema de investimentos (nome, tipo, valor investido, valor atual)
@@ -23,6 +25,7 @@
 - [x] Implementar endpoint de listagem de investimentos do usuário
 - [x] Calcular rentabilidade e ganho acumulado
 - [x] Atualizar valor atual dos investimentos
+- [x] Integrar interface de resgate (sell) no Dashboard
 
 ## Integrações de API
 - [x] Estruturar integração com Mercado Pago (depósitos via PIX)

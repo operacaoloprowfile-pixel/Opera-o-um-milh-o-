@@ -38,6 +38,7 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [investmentData, setInvestmentData] = useState({ name: "", type: "", amount: "" });
   const [openDialog, setOpenDialog] = useState(false);
 
@@ -158,6 +159,67 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!withdrawAmount) {
+      toast.error("Digite um valor");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/trpc/financial.withdraw", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ json: { amount: parseFloat(withdrawAmount) } }),
+      });
+
+      const data = await response.json();
+      const result = data.result?.data?.json || data.result?.data;
+      if (result?.success) {
+        toast.success("Saque realizado!");
+        setWithdrawAmount("");
+        loadData();
+      } else {
+        toast.error(data.error?.json?.message || "Erro ao sacar");
+      }
+    } catch (error) {
+      console.error("Withdraw error:", error);
+      toast.error("Erro na conexão");
+    }
+  };
+
+  const handleSellInvestment = async (investmentId: number, amount: number) => {
+    try {
+      const response = await fetch("/api/trpc/investments.sell", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          json: {
+            investmentId,
+            amount,
+          },
+        }),
+      });
+
+      const data = await response.json();
+      const result = data.result?.data?.json || data.result?.data;
+      if (result?.success) {
+        toast.success("Resgate realizado!");
+        loadData();
+      } else {
+        toast.error(data.error?.json?.message || "Erro ao resgatar");
+      }
+    } catch (error) {
+      console.error("Sell error:", error);
+      toast.error("Erro na conexão");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
@@ -255,26 +317,52 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <Card className="bg-slate-800 border-slate-700">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm sm:text-base text-white">Fazer Depósito</CardTitle>
+              <CardTitle className="text-sm sm:text-base text-white">Depósito / Saque</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-1">
-                <Label htmlFor="deposit-amount" className="text-xs sm:text-sm text-slate-300">Valor (R$)</Label>
-                <Input
-                  id="deposit-amount"
-                  type="number"
-                  placeholder="0.00"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-white text-sm"
-                />
+            <CardContent className="space-y-4">
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="deposit-amount" className="text-xs sm:text-sm text-slate-300">Depósito (R$)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="deposit-amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={depositAmount}
+                      onChange={(e) => setDepositAmount(e.target.value)}
+                      className="bg-slate-700 border-slate-600 text-white text-sm"
+                    />
+                    <Button
+                      onClick={handleDeposit}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-4"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <Button
-                onClick={handleDeposit}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2"
-              >
-                Depositar
-              </Button>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="withdraw-amount" className="text-xs sm:text-sm text-slate-300">Saque (R$)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="withdraw-amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      className="bg-slate-700 border-slate-600 text-white text-sm"
+                    />
+                    <Button
+                      onClick={handleWithdraw}
+                      variant="outline"
+                      className="border-red-500 text-red-500 hover:bg-red-500 hover:text-white text-sm px-4"
+                    >
+                      OK
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -358,11 +446,21 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
                       <h4 className="font-semibold text-white text-sm sm:text-base truncate">{inv.name}</h4>
                       <p className="text-xs sm:text-sm text-slate-400">{inv.type}</p>
                     </div>
-                    <div className="text-right ml-2">
-                      <p className="text-white font-semibold text-sm sm:text-base">R$ {inv.currentValue.toFixed(2)}</p>
-                      <p className={`text-xs sm:text-sm ${inv.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                        {inv.profit >= 0 ? "+" : ""}{inv.profit.toFixed(2)}
-                      </p>
+                    <div className="text-right ml-2 flex flex-col items-end gap-1">
+                      <div>
+                        <p className="text-white font-semibold text-sm sm:text-base">R$ {inv.currentValue.toFixed(2)}</p>
+                        <p className={`text-xs sm:text-sm ${inv.profit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                          {inv.profit >= 0 ? "+" : ""}{inv.profit.toFixed(2)}
+                        </p>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        className="h-7 text-xs text-slate-400 hover:text-red-400"
+                        onClick={() => handleSellInvestment(inv.id, inv.currentValue)}
+                      >
+                        Resgatar
+                      </Button>
                     </div>
                   </div>
                 ))}

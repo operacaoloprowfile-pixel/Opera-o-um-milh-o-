@@ -1,6 +1,6 @@
 import { eq, and, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, userFinancialInfo, transactions, investments, UserFinancialInfo, Transaction, Investment } from "../drizzle/schema";
+import { InsertUser, users, userFinancialInfo, transactions, investments, User, UserFinancialInfo, Transaction, Investment } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -142,7 +142,7 @@ export async function getUserByReferralCode(code: string) {
 // Transaction queries
 export async function createTransaction(
   userId: number,
-  type: "deposit" | "withdraw" | "investment_buy" | "investment_sell",
+  type: "deposit" | "withdraw" | "investment_buy" | "investment_sell" | "referral_bonus" | "yield",
   amount: number,
   description?: string
 ): Promise<Transaction> {

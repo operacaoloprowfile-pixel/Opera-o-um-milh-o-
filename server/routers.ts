@@ -67,6 +67,7 @@ export const appRouter = router({
               name: user.name,
               email: user.email,
               cpf: user.cpf,
+              referralCode: user.referralCode,
             },
           };
         } catch (error: any) {
@@ -86,10 +87,14 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           const { userId, token, user } = await loginUser(input.cpf, input.password);
+          const fullUser = await getUserById(userId);
           return {
             success: true,
             token,
-            user,
+            user: {
+              ...user,
+              referralCode: fullUser?.referralCode,
+            },
           };
         } catch (error: any) {
           throw new TRPCError({

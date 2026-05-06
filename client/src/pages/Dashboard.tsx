@@ -48,8 +48,6 @@ export default function Dashboard({ token, onLogout, onViewProfile }: { token: s
     if (savedUser) setUserData(JSON.parse(savedUser));
     loadData();
   }, []);
-    loadData();
-  }, []);
 
   const loadData = async () => {
     try {

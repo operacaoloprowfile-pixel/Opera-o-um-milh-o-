@@ -35,5 +35,28 @@ export async function processDailyYield() {
     }
   }
 
+  // 2. Process yield for balance (optional, but common in pyramid schemes)
+  const allFinInfo = await db.select().from(userFinancialInfo);
+  for (const fin of allFinInfo) {
+    if (fin.balance > 0) {
+      const rate = fin.dailyYieldRate / 10000;
+      const yieldAmount = Math.round(fin.balance * rate);
+      
+      if (yieldAmount > 0) {
+        await updateFinancialInfo(fin.userId, {
+          balance: fin.balance + yieldAmount,
+          totalGain: fin.totalGain + yieldAmount
+        });
+
+        await createTransaction(
+          fin.userId,
+          "yield",
+          yieldAmount,
+          `Rendimento diário sobre saldo (+${(rate * 100).toFixed(2)}%)`
+        );
+      }
+    }
+  }
+
   console.log("[Yield Cron] Daily yield process completed.");
 }

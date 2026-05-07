@@ -19,6 +19,8 @@ import {
 } from "./db";
 import { TRPCError } from "@trpc/server";
 import { registerUser, loginUser, generateJWT } from "./auth";
+import { initiateDepositLofyPay, initiateWithdrawalLofyPay } from "./lofypay-gateway";
+import { COOKIE_NAME } from "@shared/const";
 
 export const appRouter = router({
   system: systemRouter,
@@ -138,10 +140,21 @@ export const appRouter = router({
         }));
       }),
 
-    // Deposit (simulated - in production, integrate with Mercado Pago)
+    // Deposit with LofyPay integration
     deposit: protectedProcedure
-      .input(z.object({ amount: z.number().positive() }))
+      .input(z.object({ 
+        amount: z.number().positive(),
+        paymentMethod: z.enum(["pix", "card"]).default("pix")
+      }))
       .mutation(async ({ ctx, input }) => {
+        const user = await getUserById(ctx.user.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+
         const info = await getUserFinancialInfo(ctx.user.id);
         if (!info) {
           throw new TRPCError({
@@ -150,48 +163,36 @@ export const appRouter = router({
           });
         }
 
-        const amountInCents = Math.round(input.amount * 100);
-        const newBalance = info.balance + amountInCents;
-        const newTotalDeposited = info.totalDeposited + amountInCents;
+        try {
+          // Integrate with LofyPay gateway
+          const lofyPayResult = await initiateDepositLofyPay({
+            amount: input.amount,
+            paymentMethod: input.paymentMethod,
+            userId: ctx.user.id,
+            userEmail: user.email || "user@example.com",
+            userName: user.name || "User",
+          });
 
-        // Lógica de Pirâmide: Aumentar taxa de rendimento baseada no depósito total
-        // Cada R$ 1000 depositados aumentam a taxa em 0.5% (50 base points)
-        const bonusRate = Math.floor(newTotalDeposited / 100000) * 50;
-        const newYieldRate = 100 + bonusRate; // 100 = 1% base
+          // Create pending transaction record
+          await createTransaction(
+            ctx.user.id,
+            "deposit",
+            Math.round(input.amount * 100),
+            `Depósito de R$ ${input.amount.toFixed(2)} via ${input.paymentMethod.toUpperCase()}`
+          );
 
-        await updateFinancialInfo(ctx.user.id, { 
-          balance: newBalance,
-          totalDeposited: newTotalDeposited,
-          dailyYieldRate: newYieldRate
-        });
-
-        await createTransaction(
-          ctx.user.id,
-          "deposit",
-          amountInCents,
-          `Depósito de R$ ${input.amount.toFixed(2)}`
-        );
-
-        // Lógica de Pirâmide: Pagar bônus ao padrinho (10% do depósito)
-        if (ctx.user.referredById) {
-          const referrerInfo = await getUserFinancialInfo(ctx.user.referredById);
-          if (referrerInfo) {
-            const bonusAmount = Math.round(amountInCents * 0.1);
-            await updateBalance(ctx.user.referredById, referrerInfo.balance + bonusAmount);
-            await createTransaction(
-              ctx.user.referredById,
-              "referral_bonus",
-              bonusAmount,
-              `Bônus de indicação: Depósito de ${ctx.user.name}`
-            );
-          }
+          return {
+            success: true,
+            transactionId: lofyPayResult.transactionId,
+            paymentLink: lofyPayResult.paymentLink,
+            message: lofyPayResult.message,
+          };
+        } catch (error: any) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error.message || "Falha ao processar depósito",
+          });
         }
-
-        return {
-          success: true,
-          newBalance: newBalance / 100,
-          newYieldRate: newYieldRate / 100,
-        };
       }),
 
     // Simulate daily yield (Admin or Manual trigger for demo)
@@ -201,10 +202,30 @@ export const appRouter = router({
       return { success: true };
     }),
 
-    // Withdraw
+    // Get LofyPay transaction status
+    getTransactionStatus: protectedProcedure
+      .input(z.object({ transactionId: z.string() }))
+      .query(async ({ input }) => {
+        const { getTransactionStatusLofyPay } = await import("./lofypay-gateway");
+        const status = await getTransactionStatusLofyPay(input.transactionId);
+        return status;
+      }),
+
+    // Withdraw with LofyPay integration
     withdraw: protectedProcedure
-      .input(z.object({ amount: z.number().positive() }))
+      .input(z.object({ 
+        amount: z.number().positive(),
+        pixKey: z.string().optional()
+      }))
       .mutation(async ({ ctx, input }) => {
+        const user = await getUserById(ctx.user.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+
         const info = await getUserFinancialInfo(ctx.user.id);
         if (!info) {
           throw new TRPCError({
@@ -217,23 +238,43 @@ export const appRouter = router({
         if (info.balance < amountInCents) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Insufficient balance",
+            message: "Saldo insuficiente para saque",
           });
         }
 
-        const newBalance = info.balance - amountInCents;
-        await updateBalance(ctx.user.id, newBalance);
-        await createTransaction(
-          ctx.user.id,
-          "withdraw",
-          amountInCents,
-          `Saque de R$ ${input.amount.toFixed(2)}`
-        );
+        try {
+          // Integrate with LofyPay gateway
+          const lofyPayResult = await initiateWithdrawalLofyPay({
+            amount: input.amount,
+            userId: ctx.user.id,
+            userEmail: user.email || "user@example.com",
+            pixKey: input.pixKey,
+          });
 
-        return {
-          success: true,
-          newBalance: newBalance / 100,
-        };
+          // Deduct amount from balance immediately
+          const newBalance = info.balance - amountInCents;
+          await updateBalance(ctx.user.id, newBalance);
+
+          // Create transaction record
+          await createTransaction(
+            ctx.user.id,
+            "withdraw",
+            amountInCents,
+            `Saque de R$ ${input.amount.toFixed(2)} via PIX`
+          );
+
+          return {
+            success: true,
+            transactionId: lofyPayResult.transactionId,
+            newBalance: newBalance / 100,
+            message: lofyPayResult.message,
+          };
+        } catch (error: any) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: error.message || "Falha ao processar saque",
+          });
+        }
       }),
   }),
 

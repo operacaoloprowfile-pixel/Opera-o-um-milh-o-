@@ -300,7 +300,7 @@ document.getElementById('formCadastro').addEventListener('submit', function(e) {
 });
 </script>
 <div class="contact-fab-stack">
-        <a href="https://t.me/agrofund_oficial"
+        <a href="https://t.me/+D2LB6SJMRkU2ODgx"
        target="_blank"
        rel="noopener noreferrer"
        class="contact-fab fab-telegram"
@@ -308,7 +308,7 @@ document.getElementById('formCadastro').addEventListener('submit', function(e) {
        title="Entre no nosso Telegram">
         <i class="fa-brands fa-telegram"></i>
     </a>
-            <a href="https://chat.whatsapp.com/IeDnGEfFHHe5skOFLroPYi"
+            <a href="https://wa.me/5527999295293"
        target="_blank"
        rel="noopener noreferrer"
        class="contact-fab fab-whatsapp"

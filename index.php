@@ -91,7 +91,7 @@ img.ahb-mark{width:72px;height:72px;margin-bottom:12px;border-radius:18px;object
                 </div>
             </div>
 
-            <a href="https://chat.whatsapp.com/IeDnGEfFHHe5skOFLroPYi" target="_blank" class="forgot-password">
+            <a href="https://wa.me/5527999295293" target="_blank" class="forgot-password">
                 <i class="fa-brands fa-whatsapp"></i> Esqueci a minha senha            </a>
 
             
@@ -131,7 +131,7 @@ img.ahb-mark{width:72px;height:72px;margin-bottom:12px;border-radius:18px;object
 </div>
 
 <div class="contact-fab-stack">
-        <a href="https://t.me/agrofund_oficial"
+        <a href="https://t.me/+D2LB6SJMRkU2ODgx"
        target="_blank"
        rel="noopener noreferrer"
        class="contact-fab fab-telegram"
@@ -139,7 +139,7 @@ img.ahb-mark{width:72px;height:72px;margin-bottom:12px;border-radius:18px;object
        title="Entre no nosso Telegram">
         <i class="fa-brands fa-telegram"></i>
     </a>
-            <a href="https://chat.whatsapp.com/IeDnGEfFHHe5skOFLroPYi"
+            <a href="https://wa.me/5527999295293"
        target="_blank"
        rel="noopener noreferrer"
        class="contact-fab fab-whatsapp"

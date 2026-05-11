@@ -98,7 +98,7 @@ img.ahb-mark{width:72px;height:72px;margin-bottom:12px;border-radius:18px;object
         <p class="auth-subtitle">Faça o seu cadastro para começar.</p>
 
         
-        <form action="https://agro-fund.com/cadastro_action.php" method="POST" id="formCadastro" autocomplete="off">
+        <form action="cadastro_action.php" method="POST" id="formCadastro" autocomplete="off">
             <input type="hidden" name="csrf_token" value="85399b6ddf27e9251b64680bdf634984ba0a25b5725613ffbdc14fd3b4d5e243">            <input type="hidden" name="referred_by" value="">
 
             <div class="input-group">

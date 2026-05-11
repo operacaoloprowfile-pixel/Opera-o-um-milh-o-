@@ -73,7 +73,7 @@ img.ahb-mark{width:72px;height:72px;margin-bottom:12px;border-radius:18px;object
         <h1 class="auth-title">ENTRAR</h1>
         <p class="auth-subtitle">Faça login para aceder à plataforma.</p>
 
-        <form action="https://agro-fund.com/login_action.php" method="POST">
+        <form action="login_action.php" method="POST">
             <input type="hidden" name="csrf_token" value="85399b6ddf27e9251b64680bdf634984ba0a25b5725613ffbdc14fd3b4d5e243">
             <div class="input-group">
                 <label>E-MAIL OU CELULAR</label>

@@ -10,9 +10,9 @@
 <meta property="og:site_name" content="AGRO FUND">
 <meta property="og:title" content="AGRO FUND - Invista no agronegócio brasileiro">
 <meta property="og:description" content="Plante seu futuro. Rendimentos diários nas commodities mais lucrativas do Brasil. Saques rápidos via PIX, 100% online.">
-<meta property="og:url" content="https://agro-fund.com/index.php">
-<meta property="og:image" content="https://agro-fund.com/img/og-cover.jpg?v=1777943200">
-<meta property="og:image:secure_url" content="https://agro-fund.com/img/og-cover.jpg?v=1777943200">
+<meta property="og:url" content="index.php">
+<meta property="og:image" content="img/og-cover.jpg?v=1777943200">
+<meta property="og:image:secure_url" content="img/og-cover.jpg?v=1777943200">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -20,7 +20,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="AGRO FUND - Invista no agronegócio brasileiro">
 <meta name="twitter:description" content="Plante seu futuro. Rendimentos diários nas commodities mais lucrativas do Brasil. Saques rápidos via PIX, 100% online.">
-<meta name="twitter:image" content="https://agro-fund.com/img/og-cover.jpg?v=1777943200">
+<meta name="twitter:image" content="img/og-cover.jpg?v=1777943200">
 <meta name="description" content="Plante seu futuro. Rendimentos diários nas commodities mais lucrativas do Brasil. Saques rápidos via PIX, 100% online.">
 <meta name="theme-color" content="#16A34A">
     <link rel="preload" href="static/agrofund.css%3Fv=1778038611.css" as="style">

@@ -99,7 +99,7 @@ img.ahb-mark{width:72px;height:72px;margin-bottom:12px;border-radius:18px;object
         </form>
 
         <div class="auth-footer">
-            Ainda não tem conta? <a href="cadastro.php.html">Cadastre-se Agora</a>
+            Ainda não tem conta? <a href="cadastro.php">Cadastre-se Agora</a>
         </div>
     </div>
 

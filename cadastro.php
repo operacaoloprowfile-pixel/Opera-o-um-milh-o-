@@ -165,7 +165,7 @@ img.ahb-mark{width:72px;height:72px;margin-bottom:12px;border-radius:18px;object
         </form>
 
         <div class="auth-footer">
-            Já tem conta? <a href="index.php.html">Faça Login</a>
+            Já tem conta? <a href="index.php">Faça Login</a>
         </div>
     </div>
 
